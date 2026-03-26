@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: employees
+    // Fields: firstName, lastName, patronymic, role, phone, email
+    //
+    // Collection: companies
+    // Fields: legalName, shortName, inn, kpp, legalAddress, actualAddress, phone, email, responsibleEmployeeId
+    //
+    // Collection: contactPersons
+    // Fields: firstName, lastName, patronymic, phone, email, actualAddress, companyIds, responsibleEmployeeId
+    //
+    // Collection: projects
+    // Fields: name, stage, oneTimeFee, monthlyFee, companyId, contactPersonIds, billingAddress, additionalInfo, plannedDate, channelType, channelSpeed, responsibleEmployeeId, partnerCost, techDeptCost, macAddress, portSpeed, createdAt
+    //
+    // Collection: surveyProjects
+    // Fields: projectId, monthlyPartnerFee, address, additionalInfo, photos
+    //
+    // Collection: messages
+    // Fields: targetId, senderId, text, createdAt
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isEmployee() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/employees/$(request.auth.uid)) ||
+        request.auth.token.email == 'ddvworkspace@gmail.com'
+      );
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == 'ddvworkspace@gmail.com' ||
+         (exists(/databases/$(database)/documents/employees/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role == 'COMMERCIAL_DIRECTOR'));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidEmployee(data) {
+      return data.firstName is string && data.firstName.size() > 0 &&
+             data.lastName is string && data.lastName.size() > 0 &&
+             data.role in ['COMMERCIAL_DIRECTOR', 'PM', 'TECH_DEPT', 'PARTNER'] &&
+             isValidEmail(data.email);
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.auth.uid == employeeId || isAdmin()) && isValidEmployee(request.resource.data);
+      allow update: if isAuthenticated() && (request.auth.uid == employeeId || isAdmin()) && isValidEmployee(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isEmployee();
+    }
+
+    match /contactPersons/{contactPersonId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isEmployee();
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isEmployee();
+    }
+
+    match /surveyProjects/{surveyId} {
+      allow read: if isAuthenticated();
+      allow write: if isEmployee();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isEmployee() && request.resource.data.senderId == request.auth.uid;
+    }
+  }
+}

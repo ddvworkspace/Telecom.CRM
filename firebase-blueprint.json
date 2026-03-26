@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Employee": {
+      "title": "Employee",
+      "description": "System user profile",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string", "description": "First name" },
+        "lastName": { "type": "string", "description": "Last name" },
+        "patronymic": { "type": "string", "description": "Patronymic" },
+        "role": { "type": "string", "enum": ["COMMERCIAL_DIRECTOR", "PM", "TECH_DEPT", "PARTNER"], "description": "User role in the workflow" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "email": { "type": "string", "format": "email", "description": "Email address" }
+      },
+      "required": ["firstName", "lastName", "role", "email"]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Client organization",
+      "type": "object",
+      "properties": {
+        "legalName": { "type": "string", "description": "Full legal name" },
+        "shortName": { "type": "string", "description": "Short name" },
+        "inn": { "type": "string", "description": "INN" },
+        "kpp": { "type": "string", "description": "KPP" },
+        "legalAddress": { "type": "string", "description": "Legal address" },
+        "actualAddress": { "type": "string", "description": "Actual address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "email": { "type": "string", "format": "email", "description": "General email" },
+        "responsibleEmployeeId": { "type": "string", "description": "ID of the responsible employee" }
+      },
+      "required": ["legalName", "inn"]
+    },
+    "ContactPerson": {
+      "title": "Contact Person",
+      "description": "Individual representing a company",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string", "description": "First name" },
+        "lastName": { "type": "string", "description": "Last name" },
+        "patronymic": { "type": "string", "description": "Patronymic" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "email": { "type": "string", "format": "email", "description": "Email" },
+        "actualAddress": { "type": "string", "description": "Actual address" },
+        "companyIds": { "type": "array", "items": { "type": "string" }, "description": "IDs of associated companies" },
+        "responsibleEmployeeId": { "type": "string", "description": "ID of the responsible employee" }
+      },
+      "required": ["firstName", "lastName", "phone"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Main workflow entity for telecom connection",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Project name" },
+        "stage": { 
+          "type": "string", 
+          "enum": [
+            "REQUEST_RECEIVED", 
+            "ASSIGNED_TO_PM", 
+            "COSTING_IN_PROGRESS", 
+            "CP_PREPARATION", 
+            "CP_SENT", 
+            "CONTRACTING", 
+            "IMPLEMENTATION", 
+            "COMPLETED", 
+            "FAILED"
+          ],
+          "description": "Current stage of the project" 
+        },
+        "oneTimeFee": { "type": "number", "description": "One-time connection fee" },
+        "monthlyFee": { "type": "number", "description": "Monthly subscription fee" },
+        "companyId": { "type": "string", "description": "Client company ID" },
+        "contactPersonIds": { "type": "array", "items": { "type": "string" }, "description": "Contact person IDs" },
+        "billingAddress": { "type": "string", "description": "Address for billing" },
+        "additionalInfo": { "type": "string", "description": "Text area for notes" },
+        "plannedDate": { "type": "string", "format": "date", "description": "Planned connection date" },
+        "channelType": { "type": "string", "description": "Type of channel" },
+        "channelSpeed": { "type": "string", "description": "Channel speed" },
+        "responsibleEmployeeId": { "type": "string", "description": "Current responsible PM or Director" },
+        "partnerCost": { "type": "number", "description": "Cost from external partner" },
+        "techDeptCost": { "type": "number", "description": "Cost from internal tech dept" },
+        "macAddress": { "type": "string", "description": "MAC address of equipment" },
+        "portSpeed": { "type": "string", "description": "Actual port speed" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "stage", "companyId"]
+    },
+    "SurveyProject": {
+      "title": "Survey Project",
+      "description": "Technical survey details",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string", "description": "Parent project ID" },
+        "monthlyPartnerFee": { "type": "number", "description": "Fee for partner channel" },
+        "address": { "type": "string", "description": "Survey address" },
+        "additionalInfo": { "type": "string", "description": "Technical notes" },
+        "photos": { "type": "array", "items": { "type": "string" }, "description": "URLs to photos" }
+      },
+      "required": ["projectId"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message",
+      "type": "object",
+      "properties": {
+        "targetId": { "type": "string", "description": "ID of the Project or Company the chat belongs to" },
+        "senderId": { "type": "string", "description": "Employee ID" },
+        "text": { "type": "string", "description": "Message content" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["targetId", "senderId", "text"]
+    }
+  },
+  "firestore": {
+    "/employees/{employeeId}": { "schema": "Employee", "description": "User profiles" },
+    "/companies/{companyId}": { "schema": "Company", "description": "Client companies" },
+    "/contactPersons/{contactPersonId}": { "schema": "ContactPerson", "description": "Contact persons" },
+    "/projects/{projectId}": { "schema": "Project", "description": "Telecom projects" },
+    "/surveyProjects/{surveyId}": { "schema": "SurveyProject", "description": "Technical surveys" },
+    "/messages/{messageId}": { "schema": "Message", "description": "Chat messages" }
+  }
+}
